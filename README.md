@@ -1,6 +1,9 @@
 # Chi2nagisa
 
 
+Thanks for [dezhiShen](https://github.com/dezhiShen)'s great help on constructing this homepage.
+
+
 Student, interested in origami (making paper ball), beginner on programming.
 
 
