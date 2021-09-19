@@ -1,0 +1,105 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <!-- <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <title>博客</title>
+</head>
+
+<body>
+    <div id="app">
+        <el-container>
+            <el-aside>
+                <div style="text-align: center;">
+                    <img style="border-radius: 30px;width: 60px;height: 60px;"
+                        src="https://avatars.githubusercontent.com/u/26274059?v=4"><br>
+                    <a href="https://github.com/dezhiShen">github.com</a>
+                </div>
+                <div ref="summary"></div>
+            </el-aside>
+            <el-main>
+                <div ref="content"></div>
+            </el-main>
+        </el-container>
+        <div id="content"></div>
+    </div>
+</body>
+<script>
+    var vm = new Vue({
+        el: "#app",
+        name: "app",
+        props: {},
+        computed: {},
+        data() {
+            return {
+                tagMappingUrl: {},
+                renderer: null,
+            }
+        },
+        methods: {
+            init: async function () {
+                await this.initRender()
+            },
+            initRender: function () {
+                this.renderer = new marked.Renderer();
+                this.renderer.link = (href, title, text) => {
+                    if (href.startsWith("http")) {
+                        return `<a href="${href}" target="_blank">${text}</a>`
+                    } else {
+                        this.tagMappingUrl[text] = href
+                        return `<a href="#${text}" onclick="renderContent('${href}')">${text}</a>`
+                    }
+                }
+            },
+            renderSummary: async function () {
+                await this.renderFromUrl("./SUMMARY.md").then(
+                    data => {
+                        this.$refs.summary.innerHTML = data
+                    }
+                )
+            },
+            renderContent: async function (url) {
+                await this.renderFromUrl(url).then(data => {
+                    this.$refs.content.innerHTML = data
+                })
+            },
+            renderFromUrl: function (url, node) {
+                let instance = axios.create()
+                return instance.get(url).then(res => {
+                    return marked(res.data, {
+                        renderer: this.renderer,
+                        gfm: true,
+                        tables: true,
+                        breaks: false,
+                        pedantic: false,
+                        sanitize: false,
+                        smartLists: true,
+                        smartypants: false,
+                        highlight: this.highlight
+                    })
+                })
+            }
+        },
+
+        mounted: async function () {
+            window.renderContent = this.renderContent;
+            await this.init()
+            await this.renderSummary()
+            let url = window.location.href
+            if (url.split("#")[1]) {
+                this.renderContent(this.tagMappingUrl[decodeURI(url.split("#")[1])])
+            } else {
+                this.renderContent("./README.md")
+            }
+
+        }
+    });
+</script>
+
+</html>
